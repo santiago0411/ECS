@@ -1,0 +1,16 @@
+# Binaries
+**/bin/
+bin-int/
+
+# Visual Studio/idea files and folder
+.vs/
+**.sln
+**.vcxproj
+**.vcxproj.filters
+**.vcxproj.user
+**.DotSettings.user
+**.csproj
+.idea/
+
+Main.cpp
+Components.hpp
