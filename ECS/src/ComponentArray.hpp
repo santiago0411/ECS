@@ -24,6 +24,8 @@ namespace ECS
 	public:
 		using Index = size_t;
 		using ValueType = T;
+		typedef void (*OnConstructFn)(Entity, T&);
+		typedef void (*OnDestroyFn)(Entity, T&);
 
 		// Iterator to be used to go through every instance of component T
 		class Iterator
@@ -162,6 +164,10 @@ namespace ECS
 			T& newComponent = m_ComponentArray[newIndex];
 			newComponent = T(std::forward<Args>(args)...);
 
+			// Call OnConstructFn if it was registered
+			if (m_OnConstructFn)
+				m_OnConstructFn(entity, newComponent);
+
 			// Increase the size for the next index and return the ref to the memory containing the new component
 			m_Size++;
 			return newComponent;
@@ -169,8 +175,15 @@ namespace ECS
 
 		void RemoveData(const Entity entity)
 		{
-			// Copy the element at the end into the deleted element's place
+			// Get the index of the removed entity and a reference to the component
 			Index indexOfRemovedEntity = m_EntityToIndexMap[entity];
+
+			// Call OnDestroyFn if it was registered
+			T& removedComponent = m_ComponentArray[indexOfRemovedEntity];
+			if (m_OnDestroyFn)
+				m_OnDestroyFn(entity, removedComponent);
+
+			// Get the index of the last element and swap the component slot
 			Index indexOfLastElement = m_Size - 1;
 			m_ComponentArray[indexOfRemovedEntity] = m_ComponentArray[indexOfLastElement];
 
@@ -201,6 +214,16 @@ namespace ECS
 				RemoveData(entity);
 		}
 
+		void RegisterOnConstruct(OnConstructFn func)
+		{
+			m_OnConstructFn = func;
+		}
+
+		void RegisterOnDestroy(OnDestroyFn func)
+		{
+			m_OnDestroyFn = func;
+		}
+
 		// Default iterator, (to be used with range-based for loop) will go through the components
 		[[nodiscard]] Iterator begin() { return Iterator(m_ComponentArray, m_Size); }
 		[[nodiscard]] Iterator end() { return Iterator(m_ComponentArray, {}); }
@@ -214,5 +237,7 @@ namespace ECS
 		std::unordered_map<Entity, Index> m_EntityToIndexMap;
 		std::unordered_map<Index, Entity> m_IndexToEntityMap;
 		Index m_Size = 0;
+		OnConstructFn m_OnConstructFn = nullptr;
+		OnDestroyFn m_OnDestroyFn = nullptr;
 	};
 }

@@ -75,6 +75,22 @@ namespace ECS
 			return { GetComponentArray<Components>() ... };
 		}
 
+		template<typename Comp, typename Func>
+		void OnConstruct(Func func)
+		{
+			std::shared_ptr<ComponentArray<Comp>> array = GetComponentArray<Comp>();
+			static_assert(std::is_invocable_v<Func, Entity, Comp&>, "OnConstruct func doesn't take the correct type of args.");
+			array->RegisterOnConstruct(func);
+		}
+
+		template<typename Comp, typename Func>
+		void OnDestroy(Func func)
+		{
+			std::shared_ptr<ComponentArray<Comp>> array = GetComponentArray<Comp>();
+			static_assert(std::is_invocable_v<Func, Entity, Comp&>, "OnDestroy func doesn't take the correct type of args.");
+			array->RegisterOnDestroy(func);
+		}
+
 	private:
 		inline static ComponentTypeId GetUniqueComponentId()
 		{
